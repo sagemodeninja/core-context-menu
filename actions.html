@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en-US">
+    <head>
+        <link rel="stylesheet" href="RowAction.css">
+    </head>
+    <body>
+        <div id="action_container_1">
+            <button class="action-button-top-left">Top - Left</button>
+            <button class="action-button-top-center">Top - Center</button>
+            <button class="action-button-top-right">Top - Right</button>
+            <button class="action-button-center-left">Center - Left</button>
+            <button class="action-button-center-center">Center - Center</button>
+            <button class="action-button-center-right">Center - Right</button>
+            <button class="action-button-bottom-left">Bottom - Left</button>
+            <button class="action-button-bottom-center">Bottom - Center</button>
+            <button class="action-button-bottom-right">Bottom - Right</button>
+
+            <div id="action_container_2">
+                <button class="action-button-top-left">Top - Left</button>
+                <button class="action-button-top-center">Top - Center</button>
+                <button class="action-button-top-right">Top - Right</button>
+                <button class="action-button-center-left">Center - Left</button>
+                <button class="action-button-center-center">Center - Center</button>
+                <button class="action-button-center-right">Center - Right</button>
+                <button class="action-button-bottom-left">Bottom - Left</button>
+                <button class="action-button-bottom-center">Bottom - Center</button>
+                <button class="action-button-bottom-right">Bottom - Right</button>
+
+                <div id="action_container_3">
+                    <button class="action-button-top-left">Top - Left</button>
+                    <button class="action-button-top-center">Top - Center</button>
+                    <button class="action-button-top-right">Top - Right</button>
+                    <button class="action-button-center-left">Center - Left</button>
+                    <button class="action-button-center-center">Center - Center</button>
+                    <button class="action-button-center-right">Center - Right</button>
+                    <button class="action-button-bottom-left">Bottom - Left</button>
+                    <button class="action-button-bottom-center">Bottom - Center</button>
+                    <button class="action-button-bottom-right">Bottom - Right</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Scripts  -->
+        <script src="RowAction.js"></script>
+        <script src="ContextMenu.js"></script>
+        <script>
+            var container1;
+            var container2;
+            var container3;
+
+            var body;
+            var actionMenuButtons;
+            var actionContext;
+
+            document.addEventListener("DOMContentLoaded", e => {
+
+                container1 = document.getElementById("action_container_1");
+                container2 = document.getElementById("action_container_2");
+                container3 = document.getElementById("action_container_3");
+
+                let context1 = new ContextMenu({
+                    root: container1
+                });
+
+                let context2 = new ContextMenu({
+                    root: container2
+                });
+
+                let context3 = new ContextMenu({
+                    root: container3
+                });
+
+                let cont1button1 = document.querySelector("#action_container_1 .action-button-top-left");
+                let data1 = { name: "Gary Antier", age: 21, gender: "Male", civilStatus: "Single" };
+                let index1 = Core.addData(data1);
+
+                cont1button1.setAttribute("data-index", index1);
+                data1.name = "Genevieve Antier";
+
+                context1.addTrigger( cont1button1 );
+                context1.addTrigger( document.querySelector("#action_container_1 .action-button-top-center") );
+                context1.addTrigger( document.querySelector("#action_container_1 .action-button-top-right") );
+                context1.addTrigger( document.querySelector("#action_container_1 .action-button-center-left") );
+                context1.addTrigger( document.querySelector("#action_container_1 .action-button-center-center") );
+                context1.addTrigger( document.querySelector("#action_container_1 .action-button-center-right") );
+                context1.addTrigger( document.querySelector("#action_container_1 .action-button-bottom-left") );
+                context1.addTrigger( document.querySelector("#action_container_1 .action-button-bottom-center") );
+                context1.addTrigger( document.querySelector("#action_container_1 .action-button-bottom-right") );
+
+                context2.addTrigger( document.querySelector("#action_container_2 .action-button-top-left") );
+                context2.addTrigger( document.querySelector("#action_container_2 .action-button-top-center") );
+                context2.addTrigger( document.querySelector("#action_container_2 .action-button-top-right") );
+                context2.addTrigger( document.querySelector("#action_container_2 .action-button-center-left") );
+                context2.addTrigger( document.querySelector("#action_container_2 .action-button-center-center") );
+                context2.addTrigger( document.querySelector("#action_container_2 .action-button-center-right") );
+                context2.addTrigger( document.querySelector("#action_container_2 .action-button-bottom-left") );
+                context2.addTrigger( document.querySelector("#action_container_2 .action-button-bottom-center") );
+                context2.addTrigger( document.querySelector("#action_container_2 .action-button-bottom-right") );
+
+                context3.addTrigger( document.querySelector("#action_container_3 .action-button-top-left") );
+                context3.addTrigger( document.querySelector("#action_container_3 .action-button-top-center") );
+                context3.addTrigger( document.querySelector("#action_container_3 .action-button-top-right") );
+                context3.addTrigger( document.querySelector("#action_container_3 .action-button-center-left") );
+                context3.addTrigger( document.querySelector("#action_container_3 .action-button-center-center") );
+                context3.addTrigger( document.querySelector("#action_container_3 .action-button-center-right") );
+                context3.addTrigger( document.querySelector("#action_container_3 .action-button-bottom-left") );
+                context3.addTrigger( document.querySelector("#action_container_3 .action-button-bottom-center") );
+                context3.addTrigger( document.querySelector("#action_container_3 .action-button-bottom-right") );
+
+                context1.addAction({
+                    label: "Edit",
+                    callback: e => {
+                        console.log(e);
+                    }
+                });
+
+                context1.addAction({
+                    label: "Finalize",
+                    callback: e => {
+                        console.log(e);
+                    }
+                });
+
+                context1.addAction({
+                    label: "Preview",
+                    callback: e => {
+                        console.log(e);
+                    }
+                });
+
+                context1.addAction({
+                    label: "Delete",
+                    callback: e => {
+                        console.log(e);
+                    }
+                });
+            });
+        </script>
+    </body>
+</html>
