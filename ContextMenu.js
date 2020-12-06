@@ -1,188 +1,206 @@
-class CoreUI {
-    constructor() {
+// Written by Gary Antier 2020
+// Current version: 1.2.0.1
+
+const ContextMargin = 3;
+const ContextTopOffset = 7;
+
+class ContextMenuOption {
+    constructor(label) {
+        this.label = label;
+        this.callbacks = [];
+
+        this.enableChallenge = () => true;
+        this.visibleChallenge = () => true;
+    }
+
+    onClick(callback) {
+        this.callbacks.push(callback);
+    }
+
+    visible(challenge) {
+        this.visibleChallenge = challenge;
+    }
+
+    enable(challenge) {
+        this.enableChallenge = challenge;
+    }
+
+    draw(data) {
+        let option;
+        let visible = this.visibleChallenge(data);
+        let enable = this.enableChallenge(data);
+
+        if (visible) {
+            option = syn.create("button");
+
+            option.text(this.label)
+                .addClass("core-context-action")
+                .enable(enable);
+
+            option.click(e => {
+                this.callbacks.forEach(c => c(data));
+            });
+        }
+
+        return option;
+    }
+}
+
+class ContextMenu {
+    constructor(id, root) {
+        this.id = id;
+        this.root = syn.wrap(root);
+        this.options = [];
         this.data = [];
+    }
+
+    addOption(option) {
+        this.options.push(option);
+    }
+
+    addOptions(...options) {
+        options.forEach(o => this.options.push(o));
+    }
+
+    draw(dataIndex) {
+        let data = this.data[dataIndex];
+        let options = [];
+
+        this.options.forEach(o => {
+            options.push( o.draw(data) );
+        });
+
+        return options;
     }
 
     addData(data) {
         return this.data.push(data) - 1;
     }
-}
 
-const Core = new CoreUI();
+    clearData() {
+        this.data = [];
+    }
+}
 
 class ContextMenuGlobal {
     constructor() {
-        this.list = {};
-        this.count = 1;
-        this.activeContext = null;
+        this.element = syn.create("div");
+        this.menus = {};
 
+        this.activeTrigger;
+        this.triggerTop;
+        this.triggerLeft;
+
+        this.init();
         this.initEventListeners();
+    }
 
-        return new Proxy(this, {
-            set: (target, prop, value) => {
-                target = prop in target ? target : target.list;
-                target[prop] = value;
+    init() {
+        this.element.addClass("core-context");
+        syn.body.append(this.element);
 
-                return true;
-            }
-        });
+        Node.prototype.addContext = function(context, data) {
+            let dataIndex = context.addData(data);
+            syn.wrap(this)
+                .data("context-id", context.id)
+                .data("index", dataIndex);
+
+            return this;
+        }
     }
 
     initEventListeners() {
-        document.addEventListener("contextmenu", e => this.onContext(e));
-        document.addEventListener("click", e => this.onClick(e));
+        syn.document.on("contextmenu", e => this.onContext(e));
+        syn.document.click(e => this.onClick(e));
+    }
+
+    addMenu(id, root) {
+        let menu = new ContextMenu(id, root);
+        this.menus[id] = menu;
+
+        return menu;
     }
 
     onContext(e) {
-        let target = e.target;
-        let contextId = target.getAttribute("data-context-id");
-
-        if(ContextMenu.isContext(target) == false) {
-            ContextMenu.reset();
+        let target = syn.wrap(e.target);
+        if (target.nodeName === "TD") {
+            target = target.parent;
         }
 
+        let contextId = target.data("context-id");
+        let dataIndex = target.data("index");
         if(contextId) {
             e.preventDefault();
-            this.list[contextId].show(e);
+
+            this.reset();
+            this.activeTrigger = target;
+            this.triggerTop = e.clientY;
+            this.triggerLeft = e.clientX;
+
+            this.show(contextId, dataIndex);
+            target.addClass("active");
         }
     }
 
     onClick(e) {
-        if(ContextMenu.isContext(e.target) == false) {
-            ContextMenu.reset();
+        if (e.target.isSameNode(this.element.self) == false) {
+            this.reset();
         }
     }
-}
 
-const Contexts = new ContextMenuGlobal();
+    show(contextId, dataIndex) {
+        let element = this.element;
+        let menu = this.menus[contextId];
 
-class ContextMenuAction {
-    constructor(label, callback) {
-        this.label = label;
-        this.callback = callback;
-    }
+        let options = menu.draw(dataIndex);
+        options.forEach(o => {
+            if (o) {
+                element.append(o)
+            }
+        });
 
-    draw(context) {
-        let action = document.createElement("button");
-        
-        action.innerText = this.label;
-        action.classList.add("core-context-action");
-
-        action.addEventListener("click", e => this.callback(e));
-
-        context.element.appendChild(action);
-    }
-}
-
-class ContextMenu {
-    constructor(config) {
-        let element = document.createElement("div");
-        document.body.appendChild(element);
-        
-        // Generate unique Id...
-        let timestampId = new Date().getTime();
-        let index = Contexts.count += 1;
-        let contextId = timestampId + "." + index;
-        this.contextId = contextId;
-        Contexts[contextId] = this;
-        
-        element.classList.add("core-context");
-
-        this.element = element;
-        this.config = config;
-        this.actions = [];
-    }
-
-    static isContext(target) {
-        let classList = target.classList;
-        
-        return classList.contains("core-context") || 
-               classList.contains("core-context-action");
-    }
-    
-    static reset() {
-        Contexts.activeContext?.reset();
-        Contexts.activeContext = null;
-    }
-
-    get bounds() {
-        return this.element.getBoundingClientRect();
-    }
-
-    get height() {
-        return this.bounds.height;
-    }
-
-    get width() {
-        return this.bounds.width;
-    }
-
-    addTrigger(e) {
-        e.setAttribute("data-context-id", this.contextId);
-    }
-
-    addAction(config) {
-        let action = new ContextMenuAction(config.label, config.callback);
-        this.actions.push(action);
-    }
-
-    show(e) {
-        let target = e.target;
-        let dataIndex = parseInt( target.getAttribute("data-index") );
-        let data = Core.data[dataIndex];
-
-        console.log(dataIndex, data);
-
-        let root = this.config.root;
-        let margin = 3;
-        let topOffset = 7;
-
-        this.actions.forEach(action => action.draw(this));
-
-        // Root bounds...
-        let rootBounds = root.getBoundingClientRect();
-        let rootTop = rootBounds.top + margin;
-        let rootRight = rootBounds.right - margin;
-        let rootBottom = rootBounds.bottom - margin;
-        let rootLeft = rootBounds.left + margin;
+        // Bounds...
+        let root = menu.root;
+        let rootTop = root.boundsTop + ContextMargin;
+        let rootRight = root.boundsRight - ContextMargin;
+        let rootBottom = root.boundsBottom - ContextMargin;
+        let rootLeft = root.boundsLeft + ContextMargin;
 
         // Contexts...
-        let contextTop = e.clientY - topOffset;
-        let contextLeft = e.clientX;
-        let contextBottom = contextTop + this.height;
-        let contextRight = contextLeft + this.width;
-        
+        let contextTop = this.triggerTop - ContextTopOffset;
+        let contextLeft = this.triggerLeft;
+        let contextBottom = contextTop + element.boundsHeight;
+        let contextRight = contextLeft + element.boundsWidth;
+
         // X-limit bounds.
-        if(contextLeft < rootLeft) {
+        if (contextLeft < rootLeft) {
             contextLeft = rootLeft;
-        } else if(contextRight > rootRight) {
-            contextLeft = rootRight - this.width;
-        }
-        
-        // Y-limit bounds.
-        if(contextTop < rootTop) {
-            contextTop = rootTop;
-        }else if(contextBottom > rootBottom) {
-            contextTop = rootBottom - this.height;
+        } else if (contextRight > rootRight) {
+            contextLeft = rootRight - element.boundsWidth;
         }
 
-        this.position(contextTop, contextLeft);
-        this.element.classList.add("active");
-        Contexts.activeContext = this;
+        // Y-limit bounds.
+        if (contextTop < rootTop) {
+            contextTop = rootTop;
+        } else if (contextBottom > rootBottom) {
+            contextTop = rootBottom - element.boundsHeight;
+        }
+
+        element.addClass("active");
+        element.self.style.top = `${contextTop}px`;
+        element.self.style.left = `${contextLeft}px`;
     }
 
     reset() {
-        let element = this.element;        
-        element.classList.remove("active");
-        element.innerHTML = null;
-        
-        this.position(-this.height, -this.width);
-    }
+        this.element.empty();
+        this.element.removeClass("active");
+        this.element.attr("style", "");
+        this.activeTrigger?.removeClass("active");
 
-    position(top, left) {
-        let style = this.element.style;
-        
-        style.top = top + "px";
-        style.left = left + "px";
+        this.activeTrigger = undefined;
+        this.triggerTop = undefined;
+        this.triggerLeft = undefined;
     }
 }
+
+const globalContext = new ContextMenuGlobal();
